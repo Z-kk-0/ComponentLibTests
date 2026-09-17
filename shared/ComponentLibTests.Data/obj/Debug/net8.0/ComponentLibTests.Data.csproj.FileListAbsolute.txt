@@ -1,0 +1,17 @@
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/bin/Debug/net8.0/ComponentLibTests.Data.deps.json
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/bin/Debug/net8.0/ComponentLibTests.Data.runtimeconfig.json
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/bin/Debug/net8.0/ComponentLibTests.Data.dll
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/bin/Debug/net8.0/ComponentLibTests.Data.pdb
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/bin/Debug/net8.0/ComponentLibTests.Domain.dll
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/bin/Debug/net8.0/ComponentLibTests.Domain.pdb
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/ComponentLibTests.Data.csproj.AssemblyReference.cache
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/ComponentLibTests.Data.GeneratedMSBuildEditorConfig.editorconfig
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/ComponentLibTests.Data.AssemblyInfoInputs.cache
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/ComponentLibTests.Data.AssemblyInfo.cs
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/ComponentLibTests.Data.csproj.CoreCompileInputs.cache
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/ComponentLibTests.Data.csproj.CopyComplete
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/ComponentLibTests.Data.dll
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/refint/ComponentLibTests.Data.dll
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/ComponentLibTests.Data.pdb
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/ComponentLibTests.Data.genruntimeconfig.cache
+/mnt/P/Netlive/ComponentLibTests/shared/ComponentLibTests.Data/obj/Debug/net8.0/ref/ComponentLibTests.Data.dll
