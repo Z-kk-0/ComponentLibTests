@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/ComponentLibTests.DevExpressApp.props" />
-</Project>

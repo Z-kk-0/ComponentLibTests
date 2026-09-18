@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/ComponentLibTests.RadzenApp.props" />
-</Project>
