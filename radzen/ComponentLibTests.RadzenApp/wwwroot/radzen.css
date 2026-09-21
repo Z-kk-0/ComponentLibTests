@@ -1,0 +1,13 @@
+:root {
+    --rz-primary: #3e368c;
+    --rz-primary-lighter: #ecebf4;
+    --rz-primary-light: #a8a5cb;
+    --rz-primary-dark: #2b2662;
+    --rz-primary-darker: #1c183f;
+
+    --rz-secondary: #0073e6;
+    --rz-secondary-lighter: #e6f2fd;
+    --rz-secondary-light: #7ab8f5;
+    --rz-secondary-dark: #005bb8;
+    --rz-secondary-darker: #003d7a;
+}

@@ -5,14 +5,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <link rel="stylesheet" href="app.css" />
-    <link rel="stylesheet" href="_content/Radzen.Blazor/css/material-base.css" />
-    <link rel="stylesheet" href="ComponentLibTests.RadzenApp.styles.css" />
     <HeadOutlet />
+    <link rel="stylesheet" href="radzen.css" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="ComponentLibTests.RadzenApp.styles.css" />
 </head>
 
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
 </body>

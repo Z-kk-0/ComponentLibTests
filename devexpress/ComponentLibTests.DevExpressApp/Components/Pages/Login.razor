@@ -1,2 +1,56 @@
 @page "/login"
 @attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+@rendermode InteractiveServer
+@inject IToastNotificationService ToastService
+
+<DxToastProvider Name="LoginToasts" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalEdge.Top" />
+
+<div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="d-flex align-items-center gap-2 mb-4">
+        <img width="50" height="50" src="clearscan-logo.svg" alt="ClearScan" />
+        <h2 class="mb-0">ClearScan</h2>
+    </div>
+    <div class="card shadow-sm" style="width: 100%; max-width: 400px;">
+        <div class="card-body p-4">
+            <form method="post" action="@($"/account/login?returnUrl={Uri.EscapeDataString(ReturnUrl ?? "/")}")">
+                <DxFormLayout>
+                    <DxFormLayoutItem Caption="Username" ColSpanMd="12">
+                        <DxTextBox name="username" NullText="Username" />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="Password" ColSpanMd="12">
+                        <DxTextBox name="password" Password="true" NullText="Password" />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem ColSpanMd="12">
+                        <DxCheckBox T="bool" name="rememberMe">Remember me</DxCheckBox>
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem ColSpanMd="12">
+                        <DxButton SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" Text="Sign In" CssClass="w-100" />
+                    </DxFormLayoutItem>
+                </DxFormLayout>
+            </form>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Error { get; set; }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && !string.IsNullOrEmpty(Error))
+        {
+            ToastService.ShowToast(new ToastOptions
+            {
+                ProviderName = "LoginToasts",
+                Text = Error,
+                RenderStyle = ToastRenderStyle.Danger,
+                ShowIcon = true,
+                DisplayTime = TimeSpan.FromSeconds(6)
+            });
+        }
+    }
+}

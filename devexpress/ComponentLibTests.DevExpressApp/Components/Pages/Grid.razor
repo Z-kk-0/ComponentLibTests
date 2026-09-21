@@ -1,0 +1,100 @@
+@page "/grid/simple-grid"
+@using ComponentLibTests.Data
+@using ComponentLibTests.Domain.Entities
+@using Microsoft.EntityFrameworkCore
+@implements IAsyncDisposable
+
+<PageTitle>Grid</PageTitle>
+
+<GridSubNav />
+
+<h1>Grid</h1>
+
+<div class="d-flex align-items-center gap-2 mb-2">
+    <DxCheckBox T="bool" CheckType="CheckType.Switch" @bind-Checked="advancedFiltering">Advanced filtering</DxCheckBox>
+</div>
+
+<DxGrid Data="@rows" PageSize="10" PagerVisible="true" AllowSort="true" ContextMenus="GridContextMenus.Header"
+        ShowFilterRow="@(!advancedFiltering)"
+        FilterMenuButtonDisplayMode="@(advancedFiltering ? GridFilterMenuButtonDisplayMode.Always : GridFilterMenuButtonDisplayMode.Never)"
+        FilterPanelDisplayMode="@(advancedFiltering ? GridFilterPanelDisplayMode.Always : GridFilterPanelDisplayMode.Never)">
+    <Columns>
+        <DxGridDataColumn Caption="Selection Column" Visible="false" AllowSort="false" FilterRowEditorVisible="false">
+            <CellDisplayTemplate>
+                @{ var row = (EntityMatchResult)context.DataItem; }
+                <DxCheckBox T="bool" Checked="@selectedIds.Contains(row.Id)" CheckedChanged="@((bool v) => ToggleSelected(row.Id, v))" />
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+        <DxGridDataColumn Caption="#" Visible="false" AllowSort="false" FilterRowEditorVisible="false" Width="60px">
+            <CellDisplayTemplate>
+                @(context.VisibleIndex + 1)
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+        <DxGridDataColumn FieldName="ProfileExtern.Entity" Caption="Entity (extern)" />
+        <DxGridDataColumn FieldName="MatchingValue" Caption="Match (%)" />
+        <DxGridDataColumn FieldName="EntityInternEntity.Entity" Caption="Entity (intern)" />
+        <DxGridDataColumn FieldName="EntityInternEntitiesId" Caption="Intern ID" Visible="false" />
+        <DxGridDataColumn FieldName="EntityInternEntity.EntityInternRiskLevel.RiskLevel" Caption="Risk Level (intern)" />
+        <DxGridDataColumn FieldName="ProfileExtern.EntitySource.Name" Caption="Source" />
+        <DxGridDataColumn FieldName="ProfilesExternId" Caption="Original ID" Visible="false" />
+        <DxGridDataColumn FieldName="Id" Caption="UID" Visible="false" />
+        <DxGridDataColumn FieldName="ProfileExtern.Nationality" Caption="Category" Visible="false" />
+        <DxGridDataColumn FieldName="Created" Caption="Created" />
+        <DxGridDataColumn FieldName="Updated" Caption="Updated" Visible="false" />
+        <DxGridDataColumn Caption="Actions" AllowSort="false" FilterRowEditorVisible="false">
+            <CellDisplayTemplate>
+                <div class="d-flex gap-1">
+                    <DxButton Text="True Positive" IconCssClass="bi bi-zoom-in" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Outline" />
+                    <DxButton Text="False Positive" IconCssClass="bi bi-zoom-out" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Outline" />
+                </div>
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+        <DxGridDataColumn Caption="Detail" AllowSort="false" FilterRowEditorVisible="false">
+            <CellDisplayTemplate>
+                @{ var row = (EntityMatchResult)context.DataItem; }
+                <DxButton Text="Detail" RenderStyle="ButtonRenderStyle.Primary" Click="@(() => OnDetail(row))" />
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+    </Columns>
+</DxGrid>
+
+@code {
+    [Inject] private IDbContextFactory<AppDbContext> DbFactory { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    private AppDbContext db = default!;
+    private IQueryable<EntityMatchResult> rows = default!;
+    private HashSet<int> selectedIds = new();
+    private bool advancedFiltering;
+
+    protected override async Task OnInitializedAsync()
+    {
+        db = await DbFactory.CreateDbContextAsync();
+        rows = db.EntityMatchResults
+            .Include(m => m.ProfileExtern).ThenInclude(p => p!.EntitySource)
+            .Include(m => m.EntityInternEntity).ThenInclude(e => e!.EntityInternRiskLevel)
+            .OrderBy(m => m.Id);
+    }
+
+    private void ToggleSelected(int id, bool selected)
+    {
+        if (selected)
+        {
+            selectedIds.Add(id);
+        }
+        else
+        {
+            selectedIds.Remove(id);
+        }
+    }
+
+    private void OnDetail(EntityMatchResult row)
+    {
+        NavigationManager.NavigateTo($"/grid/detail/{row.Id}");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await db.DisposeAsync();
+    }
+}

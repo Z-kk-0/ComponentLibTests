@@ -1,2 +1,35 @@
 @page "/login"
 @attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+
+
+<RadzenStack Orientation="Orientation.Vertical"
+             AlignItems="AlignItems.Center"
+             JustifyContent="JustifyContent.Center"
+             Style="height: 100vh;">
+    <RadzenStack Orientation="Orientation.Horizontal" class="rz-my-5 rz-mx-auto">
+        <img width="50" height="50" src="clearscan-logo.svg"/>
+        <RadzenText TextStyle="TextStyle.DisplayH3" TagName="TagName.H2" class="rz-mb-0">ClearScan</RadzenText>
+    </RadzenStack>
+    <RadzenStack Gap="0" class="rz-my-5 rz-mx-auto rz-border-radius-6 rz-shadow-10"
+                 Style="width: 100%; max-width: 400px; overflow: hidden; ">
+
+        <RadzenCard class="rz-shadow-0 rz-p-8">
+            <RadzenTemplateForm Data=@("Login") Action="@($"/account/login?returnUrl={Uri.EscapeDataString(ReturnUrl ?? "/")}")" Method="post">
+                @if (!string.IsNullOrEmpty(Error))
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter" class="rz-mb-4">@Error</RadzenAlert>
+                }
+                <RadzenLogin AllowRememberMe="true" />
+            </RadzenTemplateForm>
+        </RadzenCard>
+
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Error { get; set; }
+}

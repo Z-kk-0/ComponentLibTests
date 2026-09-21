@@ -1,0 +1,114 @@
+@page "/grid/simple-grid"
+
+<PageTitle>Grid</PageTitle>
+<GridSubNav />
+
+<h1>Grid</h1>
+
+
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-mb-2">
+    <RadzenLabel Text="Advanced filtering" />
+    <RadzenSwitch @bind-Value="@advancedFiltering" />
+</RadzenStack>
+
+<RadzenDataGrid Data="@rows" Count="@count" LoadData="@LoadData" IsLoading="@isLoading"
+                TItem="EntityMatchResult" AllowPaging="true" PageSize="10"
+                AllowColumnPicking="true" ColumnPickerTitle="Column Chooser" AllowFiltering="true"
+                FilterMode="@(advancedFiltering ? FilterMode.Advanced : FilterMode.Simple)">
+    <Columns>
+        <RadzenDataGridColumn TItem="EntityMatchResult" Title="Selection Column" Visible="false" Sortable="false" Filterable="false">
+            <Template Context="row">
+                <RadzenCheckBox TValue="bool" Value="@selectedIds.Contains(row.Id)" ValueChanged="@(v => ToggleSelected(row.Id, v))" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="EntityMatchResult" Title="#" Visible="false" Sortable="false" Filterable="false" Width="60px">
+            <Template Context="row">@((rows?.IndexOf(row) ?? -1) + 1)</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="ProfileExtern.Entity" Title="Entity (extern)">
+            <Template Context="row">@row.ProfileExtern?.Entity</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="MatchingValue" Title="Match (%)" />
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="EntityInternEntity.Entity" Title="Entity (intern)">
+            <Template Context="row">@row.EntityInternEntity?.Entity</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="EntityInternEntitiesId" Title="Intern ID" Visible="false" />
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="EntityInternEntity.EntityInternRiskLevel.RiskLevel" Title="Risk Level (intern)">
+            <Template Context="row">@row.EntityInternEntity?.EntityInternRiskLevel?.RiskLevel</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="ProfileExtern.EntitySource.Name" Title="Source">
+            <Template Context="row">@row.ProfileExtern?.EntitySource?.Name</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="ProfilesExternId" Title="Original ID" Visible="false" />
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="Id" Title="UID" Visible="false" />
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="ProfileExtern.Nationality" Title="Category" Visible="false">
+            <Template Context="row">@row.ProfileExtern?.Nationality</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="Created" Title="Created" />
+        <RadzenDataGridColumn TItem="EntityMatchResult" Property="Updated" Title="Updated" Visible="false" />
+        <RadzenDataGridColumn TItem="EntityMatchResult" Title="Actions" Sortable="false" Filterable="false">
+            <Template Context="row">
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.25rem">
+                    <RadzenButton Text="True Positive" Icon="zoom_in" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" />
+                    <RadzenButton Text="False Positive" Icon="zoom_out" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" />
+                </RadzenStack>
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="EntityMatchResult" Title="Detail" Sortable="false" Filterable="false">
+            <Template Context="row">
+                <RadzenButton Text="Detail" Click="@(() => OnDetail(row))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Inject] private IDbContextFactory<AppDbContext> DbFactory { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    private List<EntityMatchResult>? rows;
+    private int count;
+    private bool isLoading;
+    private HashSet<int> selectedIds = new();
+    private bool advancedFiltering;
+
+    private async Task LoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+
+        using var db = await DbFactory.CreateDbContextAsync();
+        var query = db.EntityMatchResults
+            .Include(m => m.ProfileExtern).ThenInclude(p => p!.EntitySource)
+            .Include(m => m.EntityInternEntity).ThenInclude(e => e!.EntityInternRiskLevel)
+            .AsQueryable();
+
+        if (args.Filters.Any())
+        {
+            query = query.Where(args.Filters, LogicalFilterOperator.And, FilterCaseSensitivity.CaseInsensitive);
+        }
+
+        query = !string.IsNullOrEmpty(args.OrderBy) ? query.OrderBy(args.OrderBy) : query.OrderBy(m => m.Id);
+
+        count = await query.CountAsync();
+        rows = await query.Skip(args.Skip ?? 0).Take(args.Top ?? 10).ToListAsync();
+
+        isLoading = false;
+    }
+
+    private void ToggleSelected(int id, bool selected)
+    {
+        if (selected)
+        {
+            selectedIds.Add(id);
+        }
+        else
+        {
+            selectedIds.Remove(id);
+        }
+    }
+
+    private void OnDetail(EntityMatchResult row)
+    {
+        NavigationManager.NavigateTo($"/grid/detail/{row.Id}");
+    }
+}

@@ -1,15 +1,18 @@
 using ComponentLibTests.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ComponentLibTests.Data;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options)
+    : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
 {
     public DbSet<EntityInternRiskLevel> EntityInternRiskLevels => Set<EntityInternRiskLevel>();
     public DbSet<EntityMatchStatus> EntityMatchStatuses => Set<EntityMatchStatus>();
     public DbSet<ProfileRiskLevel> ProfileRiskLevels => Set<ProfileRiskLevel>();
     public DbSet<EntitySource> EntitySources => Set<EntitySource>();
-    public DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
+    public DbSet<ApplicationUser> ApplicationUsers => Users;
     public DbSet<ProfileExtern> ProfilesExtern => Set<ProfileExtern>();
     public DbSet<EntityInternEntity> EntityInternEntities => Set<EntityInternEntity>();
     public DbSet<EntityMatchResult> EntityMatchResults => Set<EntityMatchResult>();
@@ -17,6 +20,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<EntityInternRiskLevel>(e =>
         {
             e.Property(p => p.RiskLevel).HasMaxLength(50).IsRequired();
@@ -39,7 +44,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<ApplicationUser>(e =>
         {
-            e.Property(p => p.UserName).HasMaxLength(100).IsRequired();
+            e.ToTable("ApplicationUsers");
             e.Property(p => p.DisplayName).HasMaxLength(150).IsRequired();
         });
 

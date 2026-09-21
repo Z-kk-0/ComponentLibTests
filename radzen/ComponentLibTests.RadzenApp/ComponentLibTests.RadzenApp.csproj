@@ -6,6 +6,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DevExpress.Reporting.Core" Version="26.1.4" />
+    <PackageReference Include="DevExpress.Reporting.Rider.Design" Version="26.1.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.13" />
     <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.0" />
     <PackageReference Include="Radzen.Blazor" Version="11.4.0" />

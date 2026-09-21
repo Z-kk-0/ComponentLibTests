@@ -1,0 +1,113 @@
+@page "/grid/detail/{Id:int}"
+@using ComponentLibTests.Data
+@using ComponentLibTests.Domain.Entities
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Match Detail</PageTitle>
+
+@if (matchResult is not null)
+{
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <h3 class="mb-0">@Title</h3>
+        <span class="badge @MatchBadgeCssClass">@($"{matchResult.MatchingValue:0}%")</span>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+        <DxButton Text="True Positive" IconCssClass="bi bi-search" RenderStyle="ButtonRenderStyle.Secondary" />
+        <DxButton Text="False Positive" IconCssClass="bi bi-search" RenderStyle="ButtonRenderStyle.Secondary" />
+        <DxButton Text="Generate PDF" IconCssClass="bi bi-file-earmark-text" RenderStyle="ButtonRenderStyle.Success" />
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mb-2">
+        <DxButton Text="Match History" IconCssClass="bi bi-clock-history" RenderStyle="ButtonRenderStyle.Secondary" />
+        <DxButton Text="Notification History" IconCssClass="bi bi-bell" RenderStyle="ButtonRenderStyle.Secondary" />
+    </div>
+
+    <DxGrid Data="@detailRows">
+        <Columns>
+            <DxGridDataColumn FieldName="Label" Caption="Label" />
+            <DxGridDataColumn Caption="Extern Profile">
+                <CellDisplayTemplate>
+                    @{ var row = (DetailRow)context.DataItem; }
+                    @if (row.IsOrganisation && !string.IsNullOrEmpty(row.ExternValue))
+                    {
+                        <span class="badge text-bg-warning">@row.ExternValue</span>
+                    }
+                    else
+                    {
+                        @row.ExternValue
+                    }
+                </CellDisplayTemplate>
+            </DxGridDataColumn>
+            <DxGridDataColumn Caption="Intern Profile">
+                <CellDisplayTemplate>
+                    @{ var row = (DetailRow)context.DataItem; }
+                    @if (row.IsOrganisation && !string.IsNullOrEmpty(row.InternValue))
+                    {
+                        <span class="badge text-bg-warning">@row.InternValue</span>
+                    }
+                    else
+                    {
+                        @row.InternValue
+                    }
+                </CellDisplayTemplate>
+            </DxGridDataColumn>
+        </Columns>
+    </DxGrid>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Inject] private IDbContextFactory<AppDbContext> DbFactory { get; set; } = default!;
+
+    private EntityMatchResult? matchResult;
+    private List<DetailRow> detailRows = new();
+
+    private string Title => $"{matchResult?.ProfileExtern?.Entity} - {matchResult?.EntityInternEntity?.Entity}";
+
+    private string MatchBadgeCssClass => matchResult switch
+    {
+        { MatchingValue: >= 80 } => "text-bg-danger",
+        { MatchingValue: >= 50 } => "text-bg-warning",
+        _ => "text-bg-info"
+    };
+
+    private class DetailRow
+    {
+        public string Label { get; set; } = "";
+        public string? ExternValue { get; set; }
+        public string? InternValue { get; set; }
+        public bool IsOrganisation { get; set; }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        using var db = await DbFactory.CreateDbContextAsync();
+        matchResult = await db.EntityMatchResults
+            .Include(m => m.ProfileExtern).ThenInclude(p => p!.EntitySource)
+            .Include(m => m.ProfileExtern).ThenInclude(p => p!.ProfileRiskLevel)
+            .Include(m => m.EntityInternEntity).ThenInclude(e => e!.EntityInternRiskLevel)
+            .FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (matchResult is null)
+        {
+            return;
+        }
+
+        var externProfile = matchResult.ProfileExtern;
+        var intern = matchResult.EntityInternEntity;
+
+        detailRows = new List<DetailRow>
+        {
+            new() { Label = "#", ExternValue = externProfile is null ? null : $"{externProfile.Id} ({externProfile.EntitySource?.Name})", InternValue = intern?.Id.ToString() },
+            new() { Label = "Is Active", ExternValue = null, InternValue = intern is null ? null : (intern.Active ? "1" : "0") },
+            new() { Label = "Risk Level", ExternValue = externProfile?.ProfileRiskLevel?.RiskLevel, InternValue = intern?.EntityInternRiskLevel is null ? null : $"{intern.EntityInternRiskLevel.RiskLevel} ({intern.EntityInternRiskLevel.Sort:D2})" },
+            new() { Label = "Label", ExternValue = null, InternValue = intern?.Label },
+            new() { Label = "Organisation", ExternValue = externProfile?.Entity, InternValue = intern?.Entity, IsOrganisation = true },
+            new() { Label = "Nationality", ExternValue = externProfile?.Nationality, InternValue = null },
+            new() { Label = "Countries", ExternValue = null, InternValue = null },
+            new() { Label = "Locations", ExternValue = null, InternValue = null },
+            new() { Label = "Remarks", ExternValue = externProfile?.Remarks, InternValue = null },
+        };
+    }
+}

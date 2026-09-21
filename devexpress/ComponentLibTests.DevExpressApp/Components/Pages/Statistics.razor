@@ -1,0 +1,147 @@
+@page "/statistics"
+@implements IAsyncDisposable
+
+<PageTitle>Statistics</PageTitle>
+
+<h1 class="stat-page-title mb-4">Current Matches</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-3 d-flex flex-column gap-3">
+        <div class="card stat-card stat-card-highlight">
+            <div class="card-body">
+                <div class="d-flex justify-content-end"><i class="bi bi-info-circle-fill text-secondary-accent"></i></div>
+                <div class="stat-number">@totalCount</div>
+                <div class="text-center text-muted">Matches Overall</div>
+            </div>
+        </div>
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-end"><i class="bi bi-info-circle-fill text-secondary-accent"></i></div>
+                <div class="stat-number">@newThisMonthCount</div>
+                <div class="text-center text-muted">New this month</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card stat-list-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Status</h5>
+                    <i class="bi bi-info-circle-fill text-secondary-accent"></i>
+                </div>
+                @foreach (var item in statusCounts)
+                {
+                    <div class="d-flex justify-content-between align-items-center stat-list-row">
+                        <span>@item.Label</span>
+                        <span class="badge text-bg-light">@item.Count</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-5">
+        <div class="card stat-list-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Sources</h5>
+                    <i class="bi bi-info-circle-fill text-secondary-accent"></i>
+                </div>
+                @foreach (var item in sourceCounts)
+                {
+                    <div class="d-flex justify-content-between align-items-center stat-list-row">
+                        <span>@item.Label</span>
+                        <span class="badge text-bg-light">@item.Count</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<h1 class="mb-2">All Matches</h1>
+
+<DxGrid Data="@matches" PageSize="10" PagerVisible="true" AllowSort="true" ShowFilterRow="true">
+    <Columns>
+        <DxGridDataColumn FieldName="Id" Caption="Id" Width="90px" />
+        <DxGridDataColumn FieldName="ProfileExtern.Entity" Caption="Extern entity" />
+        <DxGridDataColumn FieldName="EntityInternEntity.Entity" Caption="Intern entity" />
+        <DxGridDataColumn FieldName="MatchingValue" Caption="Matching value">
+            <CellDisplayTemplate>
+                @{ var row = (EntityMatchResult)context.DataItem; }
+                <span class="badge @MatchBadgeCssClass(row.MatchingValue)">@row.MatchingValue.ToString("0")</span>
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+        <DxGridDataColumn FieldName="EntityMatchStatus.Status" Caption="Status">
+            <CellDisplayTemplate>
+                @{ var row = (EntityMatchResult)context.DataItem; }
+                <span class="badge text-bg-light">@row.EntityMatchStatus?.Status</span>
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+        <DxGridDataColumn FieldName="ProfileExtern.EntitySource.Name" Caption="Source" />
+        <DxGridDataColumn FieldName="Updated" Caption="Updated date" DisplayFormat="{0:dd.MM.yyyy HH:mm}" />
+        <DxGridDataColumn FieldName="Created" Caption="Created date" DisplayFormat="{0:dd.MM.yyyy HH:mm}" />
+        <DxGridDataColumn Caption="" AllowSort="false" FilterRowEditorVisible="false" Width="70px">
+            <CellDisplayTemplate>
+                @{ var row = (EntityMatchResult)context.DataItem; }
+                <DxButton IconCssClass="bi bi-arrow-right" RenderStyle="ButtonRenderStyle.Secondary" NavigateUrl="@($"/grid/detail/{row.Id}")" />
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+    </Columns>
+</DxGrid>
+
+@code {
+    [Inject] private IDbContextFactory<AppDbContext> DbFactory { get; set; } = default!;
+
+    private AppDbContext db = default!;
+    private int totalCount;
+    private int newThisMonthCount;
+    private List<CountItem> statusCounts = new();
+    private List<CountItem> sourceCounts = new();
+    private IQueryable<EntityMatchResult> matches = default!;
+
+    private class CountItem
+    {
+        public string Label { get; set; } = "";
+        public int Count { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        db = await DbFactory.CreateDbContextAsync();
+
+        totalCount = await db.EntityMatchResults.CountAsync();
+
+        var monthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        newThisMonthCount = await db.EntityMatchResults.CountAsync(m => m.Created >= monthStart);
+
+        statusCounts = await db.EntityMatchResults
+            .GroupBy(m => m.EntityMatchStatus!.Status)
+            .Select(g => new CountItem { Label = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .ToListAsync();
+
+        sourceCounts = await db.EntityMatchResults
+            .GroupBy(m => m.ProfileExtern!.EntitySource!.Name)
+            .Select(g => new CountItem { Label = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .ToListAsync();
+
+        matches = db.EntityMatchResults
+            .Include(m => m.ProfileExtern).ThenInclude(p => p!.EntitySource)
+            .Include(m => m.EntityInternEntity)
+            .Include(m => m.EntityMatchStatus)
+            .OrderByDescending(m => m.Created);
+    }
+
+    private string MatchBadgeCssClass(double value) => value switch
+    {
+        >= 80 => "text-bg-danger",
+        >= 50 => "text-bg-warning",
+        _ => "text-bg-info"
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        await db.DisposeAsync();
+    }
+}

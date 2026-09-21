@@ -1,9 +1,45 @@
 @inherits LayoutComponentBase
 
-@Body
+<HeadContent>
+    <RadzenTheme Theme="material" />
+</HeadContent>
+
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+            <RadzenLabel Text="Clearscan" />
+        </RadzenStack>
+    </RadzenHeader>
+    <RadzenSidebar Responsive="false" class="@(sidebarExpanded ? "" : "sidebar-collapsed")">
+        <RadzenPanelMenu DisplayStyle="MenuItemDisplayStyle.IconAndText" ShowArrow="false">
+            <RadzenPanelMenuItem Text="Overview" Icon="home" />
+            <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" />
+            <RadzenPanelMenuItem Text="Statistics" Icon="bar_chart" Path="/statistics" />
+            <RadzenPanelMenuItem Text="Grid" Icon="grid_on">
+                <RadzenPanelMenuItem Text="Simple Grid" Path="/grid/simple-grid" />
+                <RadzenPanelMenuItem Text="Pivot Grid" Path="/grid/pivot" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="UI Fundamentals" Icon="auto_awesome">
+                <RadzenPanelMenuItem Text="Themes" Icon="color_lens" />
+                <RadzenPanelMenuItem Text="Colors" Icon="invert_colors" />
+            </RadzenPanelMenuItem>
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+    <RadzenBody>
+        <div class="rz-p-4">
+            @Body
+        </div>
+    </RadzenBody>
+</RadzenLayout>
+
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    bool sidebarExpanded = true;
+}

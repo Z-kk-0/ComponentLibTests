@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace ComponentLibTests.Domain.Entities;
 
 public class EntityInternRiskLevel
@@ -40,10 +42,8 @@ public class EntitySource
     public ICollection<ProfileExtern> ProfilesExtern { get; set; } = new List<ProfileExtern>();
 }
 
-public class ApplicationUser
+public class ApplicationUser : IdentityUser<Guid>
 {
-    public Guid Id { get; set; }
-    public string UserName { get; set; } = null!;
     public string DisplayName { get; set; } = null!;
 
     public ICollection<MatchResultStateChange> MatchResultStateChanges { get; set; } = new List<MatchResultStateChange>();

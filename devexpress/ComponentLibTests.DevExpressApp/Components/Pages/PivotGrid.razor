@@ -1,0 +1,111 @@
+@page "/grid/pivot"
+@using ComponentLibTests.Data
+@using ComponentLibTests.Domain.Entities
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Pivot Grid</PageTitle>
+
+<GridSubNav />
+
+<h1>Pivot Grid</h1>
+
+<h5>Cross-tab (DxPivotGrid)</h5>
+<DxPivotGrid Data="@pivotRows" ShowFieldHeaders="true" ShowGrandTotals="true" ShowPager="true" PageSize="10" CssClass="mb-4">
+    <DxPivotGridField Field="@nameof(PivotSourceRow.RiskLevel)" Caption="Risk Level" Area="PivotGridFieldArea.Row" />
+    <DxPivotGridField Field="@nameof(PivotSourceRow.Source)" Caption="Source" Area="PivotGridFieldArea.Row" />
+    <DxPivotGridField Field="@nameof(PivotSourceRow.Status)" Caption="Status" Area="PivotGridFieldArea.Column" />
+    <DxPivotGridField Field="@nameof(PivotSourceRow.Count)" Caption="Count" Area="PivotGridFieldArea.Data" SummaryType="PivotGridSummaryType.Sum" />
+    <DxPivotGridField Field="@nameof(PivotSourceRow.AvgMatch)" Caption="Avg Match %" Area="PivotGridFieldArea.Data" SummaryType="PivotGridSummaryType.Avg" />
+    <DxPivotGridField Field="@nameof(PivotSourceRow.MaxMatch)" Caption="Max Match %" Area="PivotGridFieldArea.Data" SummaryType="PivotGridSummaryType.Max" />
+</DxPivotGrid>
+
+<h5>Grouped drill-down (DxGrid)</h5>
+<DxGrid Data="@rows" ShowGroupPanel="true" AllowGroup="true"
+        DetailRowDisplayMode="GridDetailRowDisplayMode.Auto" AutoCollapseDetailRow="true"
+        PageSize="10" PagerVisible="true">
+    <Columns>
+        <DxGridDataColumn FieldName="RiskLevel" Caption="Risk Level" />
+        <DxGridDataColumn FieldName="Source" Caption="Source" />
+        <DxGridDataColumn FieldName="Status" Caption="Status" />
+        <DxGridDataColumn FieldName="Count" Caption="Count" />
+        <DxGridDataColumn FieldName="AvgMatch" Caption="Avg Match %" DisplayFormat="{0:0.0}" />
+        <DxGridDataColumn FieldName="MaxMatch" Caption="Max Match %" DisplayFormat="{0:0.0}" />
+    </Columns>
+    <DetailRowTemplate Context="detailContext">
+        @{ var row = (PivotSourceRow)detailContext.DataItem; }
+        @{ var profiles = allResults.Where(m =>
+               m.EntityInternEntity!.EntityInternRiskLevel!.RiskLevel == row.RiskLevel &&
+               m.ProfileExtern!.EntitySource!.Name == row.Source &&
+               m.EntityMatchStatus!.Status == row.Status).ToList(); }
+        <DxGrid Data="@profiles" CssClass="m-2" PageSize="5" PagerVisible="true">
+            <Columns>
+                <DxGridDataColumn Caption="Entity (extern)">
+                    <CellDisplayTemplate>
+                        @(((EntityMatchResult)context.DataItem).ProfileExtern?.Entity)
+                    </CellDisplayTemplate>
+                </DxGridDataColumn>
+                <DxGridDataColumn Caption="Entity (intern)">
+                    <CellDisplayTemplate>
+                        @(((EntityMatchResult)context.DataItem).EntityInternEntity?.Entity)
+                    </CellDisplayTemplate>
+                </DxGridDataColumn>
+                <DxGridDataColumn FieldName="MatchingValue" Caption="Match (%)" />
+                <DxGridDataColumn Caption="Detail" AllowSort="false">
+                    <CellDisplayTemplate>
+                        @{ var profile = (EntityMatchResult)context.DataItem; }
+                        <DxButton Text="Detail" RenderStyle="ButtonRenderStyle.Secondary" NavigateUrl="@($"/grid/detail/{profile.Id}")" />
+                    </CellDisplayTemplate>
+                </DxGridDataColumn>
+            </Columns>
+        </DxGrid>
+    </DetailRowTemplate>
+</DxGrid>
+
+@code {
+    [Inject] private IDbContextFactory<AppDbContext> DbFactory { get; set; } = default!;
+
+    private List<PivotSourceRow> rows = new();
+    private List<PivotSourceRow> pivotRows = new();
+    private List<EntityMatchResult> allResults = new();
+
+    public class PivotSourceRow
+    {
+        public string RiskLevel { get; set; } = "";
+        public string Source { get; set; } = "";
+        public string Status { get; set; } = "";
+        public int Count { get; set; }
+        public double AvgMatch { get; set; }
+        public double MaxMatch { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        allResults = await db.EntityMatchResults
+            .Include(m => m.ProfileExtern).ThenInclude(p => p!.EntitySource)
+            .Include(m => m.EntityInternEntity).ThenInclude(e => e!.EntityInternRiskLevel)
+            .Include(m => m.EntityMatchStatus)
+            .ToListAsync();
+
+        rows = allResults
+            .GroupBy(m => new
+            {
+                RiskLevel = m.EntityInternEntity!.EntityInternRiskLevel!.RiskLevel,
+                Source = m.ProfileExtern!.EntitySource!.Name,
+                Status = m.EntityMatchStatus!.Status
+            })
+            .Select(g => new PivotSourceRow
+            {
+                RiskLevel = g.Key.RiskLevel,
+                Source = g.Key.Source,
+                Status = g.Key.Status,
+                Count = g.Count(),
+                AvgMatch = g.Average(m => m.MatchingValue),
+                MaxMatch = g.Max(m => m.MatchingValue)
+            })
+            .ToList();
+
+        pivotRows = rows;
+    }
+}

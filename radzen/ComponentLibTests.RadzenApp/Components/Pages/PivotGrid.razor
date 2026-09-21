@@ -1,0 +1,116 @@
+@page "/grid/pivot"
+@using Radzen
+@using Radzen.Blazor
+
+<GridSubNav />
+
+
+<PageTitle>Pivot Grid</PageTitle>
+
+<h1>Pivot Grid</h1>
+
+<RadzenText TextStyle="TextStyle.H5">Cross-tab (RadzenPivotDataGrid)</RadzenText>
+<RadzenPivotDataGrid Data="@rows" TItem="PivotSourceRow" IsLoading="@isLoading"
+                      AllowFiltering="true" AllowSorting="true" AllowPaging="true" PageSize="10"
+                      ShowRowsTotals="true" ShowColumnsTotals="true" class="rz-mb-4">
+    <Rows>
+        <RadzenPivotRow TItem="PivotSourceRow" Property="RiskLevel" Title="Risk Level" />
+        <RadzenPivotRow TItem="PivotSourceRow" Property="Source" Title="Source" />
+    </Rows>
+    <Columns>
+        <RadzenPivotColumn TItem="PivotSourceRow" Property="Status" Title="Status" />
+    </Columns>
+    <Aggregates>
+        <RadzenPivotAggregate TItem="PivotSourceRow" Property="Count" Aggregate="AggregateFunction.Sum" Title="Count" />
+        <RadzenPivotAggregate TItem="PivotSourceRow" Property="AvgMatch" Aggregate="AggregateFunction.Average" Title="Avg Match %" FormatString="{0:0.0}" />
+        <RadzenPivotAggregate TItem="PivotSourceRow" Property="MaxMatch" Aggregate="AggregateFunction.Max" Title="Max Match %" FormatString="{0:0.0}" />
+    </Aggregates>
+</RadzenPivotDataGrid>
+
+<RadzenText TextStyle="TextStyle.H5">Grouped drill-down (RadzenDataGrid)</RadzenText>
+<RadzenDataGrid Data="@rows" TItem="PivotSourceRow" IsLoading="@isLoading"
+                AllowGrouping="true" AllowPaging="true" PageSize="10"
+                ShowExpandColumn="true" ExpandMode="DataGridExpandMode.Single">
+    <Columns>
+        <RadzenDataGridColumn TItem="PivotSourceRow" Property="RiskLevel" Title="Risk Level" Groupable="true" />
+        <RadzenDataGridColumn TItem="PivotSourceRow" Property="Source" Title="Source" Groupable="true" />
+        <RadzenDataGridColumn TItem="PivotSourceRow" Property="Status" Title="Status" />
+        <RadzenDataGridColumn TItem="PivotSourceRow" Property="Count" Title="Count" />
+        <RadzenDataGridColumn TItem="PivotSourceRow" Property="AvgMatch" Title="Avg Match %" FormatString="{0:0.0}" />
+        <RadzenDataGridColumn TItem="PivotSourceRow" Property="MaxMatch" Title="Max Match %" FormatString="{0:0.0}" />
+    </Columns>
+    <Template Context="row">
+        <RadzenDataGrid Data="@GetProfiles(row)" TItem="EntityMatchResult" AllowPaging="true" PageSize="5" class="rz-my-2">
+            <Columns>
+                <RadzenDataGridColumn TItem="EntityMatchResult" Title="Entity (extern)">
+                    <Template Context="profile">@profile.ProfileExtern?.Entity</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="EntityMatchResult" Title="Entity (intern)">
+                    <Template Context="profile">@profile.EntityInternEntity?.Entity</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="EntityMatchResult" Property="MatchingValue" Title="Match (%)" />
+                <RadzenDataGridColumn TItem="EntityMatchResult" Title="Detail">
+                    <Template Context="profile">
+                        <RadzenButton Text="Detail" Click="@(() => NavigationManager.NavigateTo($"/grid/detail/{profile.Id}"))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </Template>
+</RadzenDataGrid>
+
+@code {
+    [Inject] private IDbContextFactory<AppDbContext> DbFactory { get; set; }
+    [Inject] private NavigationManager NavigationManager { get; set; }
+
+    private List<PivotSourceRow> rows = new();
+    private List<EntityMatchResult> allResults = new();
+    private bool isLoading = true;
+
+    public class PivotSourceRow
+    {
+        public string RiskLevel { get; set; } = "";
+        public string Source { get; set; } = "";
+        public string Status { get; set; } = "";
+        public int Count { get; set; }
+        public double AvgMatch { get; set; }
+        public double MaxMatch { get; set; }
+    }
+
+    private List<EntityMatchResult> GetProfiles(PivotSourceRow row) =>
+        allResults.Where(m =>
+            m.EntityInternEntity!.EntityInternRiskLevel!.RiskLevel == row.RiskLevel &&
+            m.ProfileExtern!.EntitySource!.Name == row.Source &&
+            m.EntityMatchStatus!.Status == row.Status).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        allResults = await db.EntityMatchResults
+            .Include(m => m.ProfileExtern).ThenInclude(p => p!.EntitySource)
+            .Include(m => m.EntityInternEntity).ThenInclude(e => e!.EntityInternRiskLevel)
+            .Include(m => m.EntityMatchStatus)
+            .ToListAsync();
+
+        rows = allResults
+            .GroupBy(m => new
+            {
+                RiskLevel = m.EntityInternEntity!.EntityInternRiskLevel!.RiskLevel,
+                Source = m.ProfileExtern!.EntitySource!.Name,
+                Status = m.EntityMatchStatus!.Status
+            })
+            .Select(g => new PivotSourceRow
+            {
+                RiskLevel = g.Key.RiskLevel,
+                Source = g.Key.Source,
+                Status = g.Key.Status,
+                Count = g.Count(),
+                AvgMatch = g.Average(m => m.MatchingValue),
+                MaxMatch = g.Max(m => m.MatchingValue)
+            })
+            .ToList();
+
+        isLoading = false;
+    }
+}
