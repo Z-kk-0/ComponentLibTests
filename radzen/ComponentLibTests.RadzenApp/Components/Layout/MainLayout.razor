@@ -4,11 +4,31 @@
     <RadzenTheme Theme="material" />
 </HeadContent>
 
+<form id="logout-form" method="post" action="/account/logout" style="display:none"></form>
+
 <RadzenLayout>
-    <RadzenHeader>
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
-            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
-            <RadzenLabel Text="Clearscan" />
+    <RadzenHeader class="app-header">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0" Style="width: 100%;">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+                <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+                <RadzenLabel Text="Clearscan" />
+            </RadzenStack>
+            <RadzenProfileMenu class="rz-mr-4">
+                <Template>
+                    <RadzenIcon Icon="account_circle" />
+                </Template>
+                <ChildContent>
+                    <RadzenProfileMenuItem Text="@UserName" Style="cursor: default; font-weight: 600; pointer-events: none;" />
+                    <RadzenProfileMenuItem>
+                        <Template>
+                            <button type="submit" form="logout-form" class="rz-logout-button">
+                                <i class="notranslate rzi rz-navigation-item-icon" aria-hidden="true">logout</i>
+                                <span class="rz-navigation-item-text">Abmelden</span>
+                            </button>
+                        </Template>
+                    </RadzenProfileMenuItem>
+                </ChildContent>
+            </RadzenProfileMenu>
         </RadzenStack>
     </RadzenHeader>
     <RadzenSidebar Responsive="false" class="@(sidebarExpanded ? "" : "sidebar-collapsed")">
@@ -42,4 +62,17 @@
 
 @code {
     bool sidebarExpanded = true;
+    string? UserName;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            UserName = authState.User.Identity?.Name;
+        }
+    }
 }

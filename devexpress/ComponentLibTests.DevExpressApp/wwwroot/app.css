@@ -1,3 +1,26 @@
+html, body {
+    height: 100%;
+}
+
+.app-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.app-layout > form {
+    flex: 0 0 auto;
+}
+
+.app-drawer {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.dxbl-drawer.app-drawer .dxbl-drawer-content {
+    overflow-y: auto;
+}
+
 h1:focus {
     outline: none;
 }
@@ -64,6 +87,8 @@ h1:focus {
 }
 
 .dxbl-treeview {
+    flex: 1 1 auto;
+    min-height: 0;
     border-right: 1px solid var(--dxds-color-border-neutral-default-rest, #dee2e6);
 }
 

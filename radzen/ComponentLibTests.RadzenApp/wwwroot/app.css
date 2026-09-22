@@ -28,6 +28,24 @@ h1:focus {
     border-color: #929292;
 }
 
+.app-header {
+    --rz-header-background-color: var(--rz-sidebar-background-color);
+    --rz-header-color: var(--rz-sidebar-color);
+    --rz-menu-top-item-background-color: var(--rz-sidebar-background-color);
+    --rz-menu-top-item-color: var(--rz-sidebar-color);
+    --rz-menu-top-item-hover-color: var(--rz-sidebar-color);
+    --rz-menu-top-item-selected-color: var(--rz-sidebar-color);
+    --rz-menu-top-item-icon-color: var(--rz-sidebar-color);
+    --rz-menu-top-item-icon-hover-color: var(--rz-sidebar-color);
+    --rz-profile-menu-top-item-background-color: var(--rz-sidebar-background-color);
+    --rz-sidebar-toggle-color: var(--rz-sidebar-color);
+    --rz-sidebar-toggle-hover-color: var(--rz-panel-menu-item-hover-color);
+    --rz-sidebar-toggle-hover-background-color: var(--rz-panel-menu-item-hover-background-color);
+    --rz-profile-menu-toggle-button-color: var(--rz-sidebar-color);
+    --rz-header-shadow: none;
+}
+
+
 .rz-sidebar {
     width: 240px;
     overflow-x: hidden;
@@ -108,6 +126,20 @@ h1:focus {
     .stat-list-row:last-child {
         border-bottom: none;
     }
+
+.rz-logout-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+}
 
 #blazor-error-ui {
     background: lightyellow;

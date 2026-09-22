@@ -5,34 +5,57 @@
     @DxResourceManager.RegisterTheme(Themes.Fluent.Clone(theme => theme.SetCustomAccentColor("#3e368c")))
 </HeadContent>
 
-<DxToolbar CssClass="border-bottom" SizeMode="SizeMode.Large" ItemSizeMode="SizeMode.Large">
-    <Items>
-        <DxToolbarItem IconCssClass="bi bi-list" RenderStyle="ButtonRenderStyle.None" Click="@(() => isOpen = !isOpen)"/>
-        <DxToolbarItem Text="Clearscan" RenderStyle="ButtonRenderStyle.None" CssClass="brand-item"/>
-    </Items>
-</DxToolbar>
+<div class="app-layout">
+    <form method="post" action="/account/logout">
+        <DxToolbar CssClass="border-bottom" SizeMode="SizeMode.Large" ItemSizeMode="SizeMode.Large">
+            <Items>
+                <DxToolbarItem IconCssClass="bi bi-list" RenderStyle="ButtonRenderStyle.None" Click="@(() => isOpen = !isOpen)"/>
+                <DxToolbarItem Text="Clearscan" RenderStyle="ButtonRenderStyle.None" CssClass="brand-item"/>
+                <DxToolbarItem IconCssClass="bi bi-person-circle" RenderStyle="ButtonRenderStyle.None" Alignment="ToolbarItemAlignment.Right">
+                    <Items>
+                        <DxToolbarItem Text="@UserName" Enabled="false"/>
+                        <DxToolbarItem Text="Abmelden" IconCssClass="bi bi-box-arrow-right" SubmitFormOnClick="true" BeginGroup="true"/>
+                    </Items>
+                </DxToolbarItem>
+            </Items>
+        </DxToolbar>
+    </form>
 
-<DxDrawer @bind-IsOpen="isOpen" PanelWidth="240px" MiniModeEnabled="true" MiniPanelWidth="56px">
-    <BodyTemplate>
-        <DxTreeView CssClass="w-100" SizeMode="SizeMode.Large" ShowExpandButtons="@isOpen">
-            <Nodes>
-                <DxTreeViewNode Text="@(isOpen ? "Start" : "")"     IconCssClass="bi bi-house"        NavigateUrl="/" />
-                <DxTreeViewNode Text="@(isOpen ? "Dashboard" : "")" IconCssClass="bi bi-speedometer2" NavigateUrl="/dashboard" />
-                <DxTreeViewNode Text="@(isOpen ? "Statistics" : "")" IconCssClass="bi bi-bar-chart" NavigateUrl="/statistics" />
-                <DxTreeViewNode Text="@(isOpen ? "Grid" : "")" IconCssClass="bi bi-grid-3x3-gap" Expanded="true">
-                    <Nodes>
-                        <DxTreeViewNode Text="@(isOpen ? "Simple Grid" : "")" NavigateUrl="/grid/simple-grid" />
-                        <DxTreeViewNode Text="@(isOpen ? "Pivot Grid" : "")"  NavigateUrl="/grid/pivot" />
-                    </Nodes>
-                </DxTreeViewNode>
-            </Nodes>
-        </DxTreeView>
-    </BodyTemplate>
-    <TargetContent>
-        <main class="p-3">@Body</main>
-    </TargetContent>
-</DxDrawer>
+    <DxDrawer CssClass="app-drawer" @bind-IsOpen="isOpen" PanelWidth="240px" MiniModeEnabled="true" MiniPanelWidth="56px">
+        <BodyTemplate>
+            <DxTreeView CssClass="w-100" SizeMode="SizeMode.Large" ShowExpandButtons="@isOpen">
+                <Nodes>
+                    <DxTreeViewNode Text="@(isOpen ? "Start" : "")"     IconCssClass="bi bi-house"        NavigateUrl="/" />
+                    <DxTreeViewNode Text="@(isOpen ? "Dashboard" : "")" IconCssClass="bi bi-speedometer2" NavigateUrl="/dashboard" />
+                    <DxTreeViewNode Text="@(isOpen ? "Statistics" : "")" IconCssClass="bi bi-bar-chart" NavigateUrl="/statistics" />
+                    <DxTreeViewNode Text="@(isOpen ? "Grid" : "")" IconCssClass="bi bi-grid-3x3-gap" Expanded="true">
+                        <Nodes>
+                            <DxTreeViewNode Text="@(isOpen ? "Simple Grid" : "")" NavigateUrl="/grid/simple-grid" />
+                            <DxTreeViewNode Text="@(isOpen ? "Pivot Grid" : "")"  NavigateUrl="/grid/pivot" />
+                        </Nodes>
+                    </DxTreeViewNode>
+                </Nodes>
+            </DxTreeView>
+        </BodyTemplate>
+        <TargetContent>
+            <main class="p-3">@Body</main>
+        </TargetContent>
+    </DxDrawer>
+</div>
 
 @code {
     bool isOpen = true;
+    string? UserName;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            UserName = authState.User.Identity?.Name;
+        }
+    }
 }

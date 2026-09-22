@@ -72,6 +72,12 @@ app.MapPost("/account/login", async (
     return Results.Redirect(loginUrl);
 }).DisableAntiforgery();
 
+app.MapPost("/account/logout", async (SignInManager<ApplicationUser> signInManager) =>
+{
+    await signInManager.SignOutAsync();
+    return Results.LocalRedirect("/login");
+}).DisableAntiforgery();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
